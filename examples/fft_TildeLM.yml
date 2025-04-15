@@ -7,12 +7,10 @@
 # Instead of huggingface hub name, point to your local directory with safetensors
 base_model: /scratch/project_465001281/MK/checkpoints/final_train_converted/75340_masked
 
-# If your local model directory does not include a tokenizer.model or merges,
-# you can override with your custom tokenizer path:
+# this does not seem to work as intended
 tokenizer_type: AutoTokenizer
 tokenizer_path: /scratch/project_465001281/containers/finetune/llm-axolotl/4B_Final_hf
-# or you can do: tokenizer_path: /local_data/martins/llm/lumi-ckpt/4b_tokenizer/model.model
-# Axolotl tries to guess from the directory if it contains a `tokenizer.model` or `model.model`.
+
 
 # This ensures we do full fine-tuning (no LoRA).
 adapter: None
@@ -23,8 +21,9 @@ datasets:
   - path: teknium/GPT4-LLM-Cleaned
     type: alpaca
     # If you have a custom prompt constructor:
-    format: prompt_format.py::format_example
+    format: /scratch/project_465001281/containers/finetune/llm-axolotl/prompt_format.py::format_example
 
+disable_caching: true
 dataset_prepared_path: last_run_prepared
 val_set_size: 0.1
 
