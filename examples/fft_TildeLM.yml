@@ -1,0 +1,98 @@
+# -------------------------------------------------
+# Example Axolotl config for fine-tuning a local LLaMA-like model,
+# reusing relevant bits from your GPT-NeoX pretraining config
+# (e.g. bf16, flash_attention, seed, weight_decay, etc.).
+# -------------------------------------------------
+
+# Instead of huggingface hub name, point to your local directory with safetensors
+base_model: /scratch/project_465001281/MK/checkpoints/final_train_converted/75340_masked
+
+# If your local model directory does not include a tokenizer.model or merges,
+# you can override with your custom tokenizer path:
+tokenizer_type: "spm"  # let Axolotl know it’s an SPM
+tokenizer_path: /scratch/project_465001281/tokenizers/4B_Final/model.model
+# or you can do: tokenizer_path: /local_data/martins/llm/lumi-ckpt/4b_tokenizer/model.model
+# Axolotl tries to guess from the directory if it contains a `tokenizer.model` or `model.model`.
+
+# This ensures we do full fine-tuning (no LoRA).
+adapter: None
+lora_model_dir:
+
+# If you want a classic SFT on instruct data:
+datasets:
+  - path: teknium/GPT4-LLM-Cleaned
+    type: alpaca
+
+dataset_prepared_path: last_run_prepared
+val_set_size: 0.1
+
+output_dir: ./outputs/llama-30b-out
+
+# Reuse your desired sequence length.
+# 2048 is typical for base LLaMA, but if your local model supports 8k context, you can do 8192.
+sequence_len: 8192
+sample_packing: true
+eval_sample_packing: false
+pad_to_sequence_len: true
+
+# W&B placeholders
+wandb_project:
+wandb_entity:
+wandb_watch:
+wandb_name:
+wandb_log_model:
+
+# Since you had "seed: 42"
+seed: 42
+
+# Micro-batch size, no gradient accumulation
+micro_batch_size: 4
+gradient_accumulation_steps: 1
+
+# GPU memory usage
+gradient_checkpointing: false  # or true if you want to replicate "checkpoint_activations" from your JSON
+bf16: true                     # matches your "precision": "bfloat16"
+tf32: false
+flash_attention: true          # reuse "use_flashattn_swiglu: true"
+
+# Optimizer and LR schedule reused
+optimizer: adamw_torch
+learning_rate: 0.00016         # e.g. 1.6e-4 from your pretraining
+lr_scheduler: constant        # or “cosine” if you prefer
+warmup_steps: 100                # if you want a purely constant LR, set warmup = 0
+
+# Possibly carry over your weight decay=0.1 if that was important
+weight_decay: 0
+
+num_epochs: 1                  # or set a desired ‘num_steps’
+logging_steps: 1
+loss_watchdog_threshold: 5.0
+loss_watchdog_patience: 3
+
+evals_per_epoch: 4
+saves_per_epoch: 1
+
+special_tokens:
+  pad_token: "<|end_of_text|>"
+
+# We embed the DeepSpeed config inline
+deepspeed_config:
+  zero_optimization:
+    stage: 1
+    overlap_comm: true
+    reduce_scatter: true
+    allgather_partitions: true
+    contiguous_gradients: true
+  bf16:
+    enabled: true
+  train_micro_batch_size_per_gpu: 4
+  gradient_accumulation_steps: 1
+  optimizer:
+    type: AdamW
+    params:
+      lr: 0.00016       # match Axolotl's "learning_rate"
+      betas:
+        - 0.9
+        - 0.95
+      eps: 1e-8
+      weight_decay: 0.0

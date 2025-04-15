@@ -1,0 +1,123 @@
+# Example Axolotl config for fine-tuning a Llama-30B-like model
+# using multi-node (16 nodes), model parallel=8 per node, data parallel=16 total.
+# Model: "meta-llama/Llama-2-30b-hf" is behind a license.
+# For demonstration, we can use "OpenAssistant/llama_30b_oasst_rl-4" or other open LLaMA-like 30B
+# If truly open source, for example we can choose something like "decapoda-research/llama-30b-hf"
+# (which might not be fully open but let's pick a placeholder).
+
+base_model: OpenAssistant/llama_30b_oasst_rl-4  # or "decapoda-research/llama-30b-hf" if you have local weights
+model_type: LLamaForCausalLM
+tokenizer_type: AutoTokenizer
+
+# No adapters (full fine-tuning):
+adapter: None
+lora_model_dir:
+
+datasets:
+  - path: teknium/GPT4-LLM-Cleaned
+    type: alpaca
+
+# local caching of prepared data
+dataset_prepared_path: last_run_prepared
+val_set_size: 0.1
+
+output_dir: ./outputs/llama-30b-out
+
+# We want a sequence length of 8192
+sequence_len: 8192
+sample_packing: true
+eval_sample_packing: false
+pad_to_sequence_len: true
+
+# Because we are doing full fine-tuning, these lora params are not needed
+# (They won't do anything if "adapter: None". Just remove them.)
+# lora_r: 16
+# lora_alpha: 32
+# lora_dropout: 0.05
+# lora_target_modules:
+#   - gate_proj
+#   - down_proj
+#   - up_proj
+#   - q_proj
+#   - v_proj
+#   - k_proj
+#   - o_proj
+
+# Let's put minimal W&B placeholders
+wandb_project:
+wandb_entity:
+wandb_watch:
+wandb_name:
+wandb_log_model:
+
+# No gradient accumulation => 1
+gradient_accumulation_steps: 1
+# No gradient checkpointing
+gradient_checkpointing: false
+# We'll want to confirm we have enough GPU memory to set a decent micro_batch_size
+# Let's pick micro_batch_size = 2 or 4. But let's try 4 (8 GPUs in model parallel).
+# Because data parallel is 16, the total batch = micro_batch_size * dp = 4 * 16 = 64
+# That's likely OK for a quick test. If we run OOM, reduce to 2.
+micro_batch_size: 4
+
+num_epochs: 1
+
+# We'll use AdamW. Not 8-bit because bitsandbytes is not compiled for ROCm.
+optimizer: adamw_torch
+
+lr_scheduler: cosine
+learning_rate: 0.0002
+
+# We'll do BF16 on AMD
+bf16: true
+tf32: false
+
+# If you want, you can enable flash attention
+flash_attention: true
+
+# logging
+logging_steps: 1
+loss_watchdog_threshold: 5.0
+loss_watchdog_patience: 3
+
+warmup_steps: 100
+evals_per_epoch: 4
+saves_per_epoch: 1
+weight_decay: 0.0
+
+special_tokens:
+  pad_token: "<|end_of_text|>"
+
+# Deepspeed config
+# We'll embed it inline, or you can reference a ds_config.json
+# But let's show an example inline. We'll do ZeRO-1 or ZeRO-2
+# Actually for a 30B, let's try ZeRO-2. Model parallel is 8 GPUs per node, so
+# each node holds 1/8 of the model weights. Then ZeRO-2 will shard optimizer states among data parallel ranks.
+# That means each node is effectively 1 data parallel rank, so the optimizer states are sharded 16 ways across the 16 nodes.
+# We'll do overlap_comm + reduce_scatter
+# Because we have BF16, let's specify that. The rest can remain default.
+# Usually you provide a ds_config JSON, but Axolotl can parse inline if you put "deepspeed_config:"
+# or pass --deepspeed_config param. We'll just show the relevant bits.
+
+deepspeed_config:
+  zero_optimization:
+    stage: 2
+    overlap_comm: true
+    reduce_scatter: true
+    allgather_partitions: true
+    contiguous_gradients: true
+  bf16:
+    enabled: true
+  train_micro_batch_size_per_gpu: 4
+  gradient_accumulation_steps: 1
+  # you can specify optimizer info etc. e.g.
+  optimizer:
+    type: AdamW
+    params:
+      lr: 0.0002
+      betas:
+        - 0.9
+        - 0.999
+      eps: 1e-8
+      weight_decay: 0.0
+  # end ds config
