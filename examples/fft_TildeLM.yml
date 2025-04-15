@@ -9,8 +9,8 @@ base_model: /scratch/project_465001281/MK/checkpoints/final_train_converted/7534
 
 # If your local model directory does not include a tokenizer.model or merges,
 # you can override with your custom tokenizer path:
-tokenizer_type: "spm"  # let Axolotl know it’s an SPM
-tokenizer_path: /scratch/project_465001281/tokenizers/4B_Final/model.model
+tokenizer_type: AutoTokenizer
+tokenizer_path: /scratch/project_465001281/containers/finetune/llm-axolotl/4B_Final_hf
 # or you can do: tokenizer_path: /local_data/martins/llm/lumi-ckpt/4b_tokenizer/model.model
 # Axolotl tries to guess from the directory if it contains a `tokenizer.model` or `model.model`.
 
