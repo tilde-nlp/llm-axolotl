@@ -22,6 +22,8 @@ lora_model_dir:
 datasets:
   - path: teknium/GPT4-LLM-Cleaned
     type: alpaca
+    # If you have a custom prompt constructor:
+    format: prompt_format.py::format_example
 
 dataset_prepared_path: last_run_prepared
 val_set_size: 0.1
@@ -73,7 +75,25 @@ evals_per_epoch: 4
 saves_per_epoch: 1
 
 special_tokens:
-  pad_token: "<|end_of_text|>"
+  special_tokens:
+    unk_token: "<unk>"
+    bos_token: "<s>"
+    eos_token: "<|endoftext|>"
+    pad_token: "<|padding|>"         # or whatever you use for padding
+
+    additional_special_tokens:
+      - "<|system|>"
+      - "<|user|>"
+      - "<|assistant|>"
+      - "<|begin_instruction|>"
+      - "<|end_instruction|>"
+      - "<|begin_context|>"
+      - "<|end_context|>"
+      - "<|begin_response|>"
+      - "<|end_response|>"
+      # ... plus any others you plan to actually use
+
+
 
 # We embed the DeepSpeed config inline
 # ---- Stage 1 example
