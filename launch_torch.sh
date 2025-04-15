@@ -13,6 +13,11 @@
 
 set -euo pipefail
 
+export CC=gcc-12
+export CXX=g++-12
+
+export MEMORY_OPT_ALLREDUCE_SIZE=100000000
+
 module purge
 module load CrayEnv
 module load cray-python/3.9.13.1
@@ -34,6 +39,7 @@ export NCCL_NET_GDR_LEVEL=PHB
 # Master address / port
 export MASTER_ADDR=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)
 export MASTER_PORT=1337
+export WORLD_SIZE=$SLURM_NTASKS
 
 # Possibly set your model parallel env if your code picks it up:
 export MODEL_PARALLEL_SIZE=8   # or something Axolotl might read
@@ -43,6 +49,28 @@ export MODEL_PARALLEL_SIZE=8   # or something Axolotl might read
 CONTAINER_PATH=/scratch/project_465001281/containers/finetune/rocm624torch26
 
 # optional: we can do a run directory
+mkdir -p workdir
+wd=$(realpath workdir)
+if [ ! -d "$wd"/cray-deps ] ; then
+  rm -rf "$wd"/cray-deps
+  mkdir "$wd"/cray-deps
+  cp /usr/lib64/libcxi* $wd/cray-deps
+fi
+
+# meme stuff
+GPUS_PER_NODE=8
+mkdir -p ./hostfiles
+hostfile=./hostfiles/hosts_$SLURM_JOBID
+# loop over the node names
+for i in `scontrol show hostnames $SLURM_NODELIST`
+do
+    # add a line to the hostfile
+    echo $i slots=$GPUS_PER_NODE >>$hostfile
+done
+export DLTS_HOSTFILE=./hostfiles/hosts_$SLURM_JOBID
+
+
+
 
 echo "Starting Torchrun job with 16 nodes, 1 rank per node, 8 GPUs per rank..."
 
@@ -51,7 +79,7 @@ srun --cpu-bind=mask_cpu:0x00fe000000000000,0xfe00000000000000,0x0000000000fe000
            --rdzv_backend=c10d \
            --rdzv_endpoint=${MASTER_ADDR}:${MASTER_PORT} \
            --rdzv_id=llama30b_sft_run \
-           -m axolotl.cli.train -m axolotl.cli.train fft_TildeLM.yml
+           -m axolotl.cli.train examples/fft_TildeLM.yml
 
 
 # Potential snippet to measure performance:
