@@ -49,7 +49,7 @@ export MODEL_PARALLEL_SIZE=8   # or something Axolotl might read
 # If your code doesn't read this, check how axolotl sets model parallel.
 # Some frameworks need a param like --tensor-model-parallel-size 8.
 
-CONTAINER_PATH=/scratch/project_465001281/containers/finetune/rocm624torch26
+CONTAINER_PATH=/scratch/project_465001281/containers/finetune/rocm624torch26_backup
 
 # optional: we can do a run directory
 mkdir -p workdir
