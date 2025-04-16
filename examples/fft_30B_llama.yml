@@ -98,7 +98,7 @@ special_tokens:
 # Because we have BF16, let's specify that. The rest can remain default.
 # Usually you provide a ds_config JSON, but Axolotl can parse inline if you put "deepspeed_config:"
 # or pass --deepspeed_config param. We'll just show the relevant bits.
-
+use_deepspeed: true
 deepspeed_config:
   zero_optimization:
     stage: 2
