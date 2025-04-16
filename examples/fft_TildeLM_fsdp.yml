@@ -1,0 +1,160 @@
+# -------------------------------------------------
+# Example Axolotl config for fine-tuning a local LLaMA-like model,
+# reusing relevant bits from your GPT-NeoX pretraining config
+# (e.g. bf16, flash_attention, seed, weight_decay, etc.).
+# -------------------------------------------------
+
+# Instead of huggingface hub name, point to your local directory with safetensors
+base_model: /scratch/project_465001281/MK/checkpoints/final_train_converted/75340_masked
+
+# this does not seem to work as intended
+tokenizer_type: AutoTokenizer
+tokenizer_path: /scratch/project_465001281/containers/finetune/llm-axolotl/4B_Final_hf
+
+
+# This ensures we do full fine-tuning (no LoRA).
+adapter:
+lora_model_dir:
+
+# If you want a classic SFT on instruct data:
+datasets:
+  - path: teknium/GPT4-LLM-Cleaned
+    type: alpaca
+    # If you have a custom prompt constructor:
+    format: /scratch/project_465001281/containers/finetune/llm-axolotl/prompt_format.py::format_example
+
+disable_caching: true
+dataset_prepared_path: last_run_prepared
+val_set_size: 0.1
+
+output_dir: ./outputs/llama-30b-out
+
+# Reuse your desired sequence length.
+# 2048 is typical for base LLaMA, but if your local model supports 8k context, you can do 8192.
+sequence_len: 8192
+sample_packing: true
+eval_sample_packing: false
+pad_to_sequence_len: true
+
+# W&B placeholders
+wandb_project:
+wandb_entity:
+wandb_watch:
+wandb_name:
+wandb_log_model:
+
+# Since you had "seed: 42"
+seed: 42
+
+# Micro-batch size, no gradient accumulation
+micro_batch_size: 4
+gradient_accumulation_steps: 1
+
+# GPU memory usage
+gradient_checkpointing: false  # or true if you want to replicate "checkpoint_activations" from your JSON
+bf16: true                     # matches your "precision": "bfloat16"
+tf32: false
+flash_attention: true          # reuse "use_flashattn_swiglu: true"
+
+# Optimizer and LR schedule reused
+optimizer: adamw_torch
+learning_rate: 0.00016         # e.g. 1.6e-4 from your pretraining
+lr_scheduler: constant        # or “cosine” if you prefer
+warmup_steps: 100                # if you want a purely constant LR, set warmup = 0
+
+# Possibly carry over your weight decay=0.1 if that was important
+weight_decay: 0
+
+num_epochs: 1                  # or set a desired ‘num_steps’
+logging_steps: 1
+loss_watchdog_threshold: 5.0
+loss_watchdog_patience: 3
+
+evals_per_epoch: 4
+saves_per_epoch: 1
+
+special_tokens:
+  unk_token: "<unk>"
+  bos_token: "<s>"
+  eos_token: "<|endoftext|>"
+  pad_token: "<|padding|>"         # or whatever you use for padding
+
+  tokens:
+    - "<|system|>"
+    - "<|user|>"
+    - "<|assistant|>"
+    - "<|begin_instruction|>"
+    - "<|end_instruction|>"
+    - "<|begin_context|>"
+    - "<|end_context|>"
+    - "<|begin_response|>"
+    - "<|end_response|>"
+    # ... plus any others you plan to actually use
+
+
+
+use_deepspeed: false
+use_fsdp: true
+fsdp:
+  - full_shard
+  - auto_wrap
+fsdp_config:
+  # Basic example config
+  # see https://docs.axolotl.ai/docs/multi-gpu.html for more advanced usage
+  # e.g. "full_shard" or "auto_wrap_policy", etc.
+
+  fsdp_auto_wrap_policy: TRANSFORMER_BASED_WRAP
+  # or use "size_based_auto_wrap" with a min_num_params
+  fsdp_sharding_strategy: 1  # FULL_SHARD = 1, HYBRID_SHARD = 2, etc.
+  fsdp_backward_prefetch: 2
+  fsdp_state_dict_type: FULL_STATE_DICT
+  fsdp_activation_checkpointing: false
+  fsdp_offload_params: false
+  fsdp_min_num_params: 20000000
+
+# We embed the DeepSpeed config inline
+# ---- Stage 1 example
+#deepspeed_config:
+#  zero_optimization:
+#    stage: 1
+#    # Most “shard optimizer state” features are not used in Stage 1,
+#    # so you can remove overlap_comm / reduce_scatter / etc.
+#    overlap_comm: false
+#    reduce_scatter: false
+#    allgather_partitions: false
+#    contiguous_gradients: false
+#  bf16:
+#    enabled: true
+#  train_micro_batch_size_per_gpu: 4
+#  gradient_accumulation_steps: 1
+#  optimizer:
+#    type: AdamW
+#    params:
+#      lr: 0.00016
+#      betas:
+#        - 0.9
+#        - 0.95
+#      eps: 1e-8
+#      weight_decay: 0.1
+
+# ---- Stage 2 example
+#deepspeed_config:
+#  zero_optimization:
+#    stage: 2
+#    overlap_comm: true
+#    reduce_scatter: true
+#    allgather_partitions: true
+#    contiguous_gradients: true
+#  bf16:
+#    enabled: true
+#  train_micro_batch_size_per_gpu: 4
+#  gradient_accumulation_steps: 1
+#  optimizer:
+#    type: AdamW
+#    params:
+#      lr: 0.00016       # match Axolotl's "learning_rate"
+#      betas:
+#        - 0.9
+#        - 0.95
+#      eps: 1e-8
+#      weight_decay: 0.0
