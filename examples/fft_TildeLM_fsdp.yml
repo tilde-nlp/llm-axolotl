@@ -111,7 +111,6 @@ fsdp_config:
   fsdp_state_dict_type: FULL_STATE_DICT
   fsdp_activation_checkpointing: false
   fsdp_offload_params: false
-  fsdp_min_num_params: 20000000
 
 
 # We embed the DeepSpeed config inline
