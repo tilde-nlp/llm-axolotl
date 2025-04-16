@@ -110,6 +110,8 @@ deepspeed_config:
     enabled: true
   train_micro_batch_size_per_gpu: 4
   gradient_accumulation_steps: 1
+  tensor_parallel:
+    autotp_size": 8
   # you can specify optimizer info etc. e.g.
   optimizer:
     type: AdamW
