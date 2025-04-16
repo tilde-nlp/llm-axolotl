@@ -106,7 +106,7 @@ fsdp_config:
   fsdp_auto_wrap_policy: TRANSFORMER_BASED_WRAP
   # or use "size_based_auto_wrap" with a min_num_params
   fsdp_sharding_strategy: 1  # FULL_SHARD = 1, HYBRID_SHARD = 2, etc.
-  fsdp_backward_prefetch: 2
+  fsdp_backward_prefetch: BACKWARD_POST # or BACKWARD_PRE
   fsdp_state_dict_type: FULL_STATE_DICT
   fsdp_activation_checkpointing: false
   fsdp_offload_params: false
