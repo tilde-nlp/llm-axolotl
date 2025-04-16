@@ -104,8 +104,7 @@ fsdp_config:
   # e.g. "full_shard" or "auto_wrap_policy", etc.
 
   fsdp_auto_wrap_policy: TRANSFORMER_BASED_WRAP
-  fsdp_transformer_layer_cls_to_wrap:
-    - LlamaDecoderLayer
+  fsdp_transformer_layer_cls_to_wrap: LlamaDecoderLayer
   # or use "size_based_auto_wrap" with a min_num_params
   fsdp_sharding_strategy: 1  # FULL_SHARD = 1, HYBRID_SHARD = 2, etc.
   fsdp_backward_prefetch: BACKWARD_POST # or BACKWARD_PRE
@@ -113,6 +112,7 @@ fsdp_config:
   fsdp_activation_checkpointing: false
   fsdp_offload_params: false
   fsdp_min_num_params: 20000000
+
 
 # We embed the DeepSpeed config inline
 # ---- Stage 1 example
