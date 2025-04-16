@@ -13,7 +13,7 @@ tokenizer_path: /scratch/project_465001281/containers/finetune/llm-axolotl/4B_Fi
 
 
 # This ensures we do full fine-tuning (no LoRA).
-adapter: None
+adapter:
 lora_model_dir:
 
 # If you want a classic SFT on instruct data:
@@ -74,23 +74,22 @@ evals_per_epoch: 4
 saves_per_epoch: 1
 
 special_tokens:
-  special_tokens:
-    unk_token: "<unk>"
-    bos_token: "<s>"
-    eos_token: "<|endoftext|>"
-    pad_token: "<|padding|>"         # or whatever you use for padding
+  unk_token: "<unk>"
+  bos_token: "<s>"
+  eos_token: "<|endoftext|>"
+  pad_token: "<|padding|>"         # or whatever you use for padding
 
-    additional_special_tokens:
-      - "<|system|>"
-      - "<|user|>"
-      - "<|assistant|>"
-      - "<|begin_instruction|>"
-      - "<|end_instruction|>"
-      - "<|begin_context|>"
-      - "<|end_context|>"
-      - "<|begin_response|>"
-      - "<|end_response|>"
-      # ... plus any others you plan to actually use
+  tokens:
+    - "<|system|>"
+    - "<|user|>"
+    - "<|assistant|>"
+    - "<|begin_instruction|>"
+    - "<|end_instruction|>"
+    - "<|begin_context|>"
+    - "<|end_context|>"
+    - "<|begin_response|>"
+    - "<|end_response|>"
+    # ... plus any others you plan to actually use
 
 
 
