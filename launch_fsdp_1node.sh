@@ -4,8 +4,8 @@
 #SBATCH --partition dev-g  # or dev-g if you want test
 #SBATCH --exclusive=user
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=8        # 1 data-parallel process per node
-#SBATCH --cpus-per-task=7        # for example, let it have 32 cpus
+#SBATCH --ntasks-per-node=1       # 1 data-parallel process per node
+#SBATCH --cpus-per-task=56        # for example, let it have 32 cpus
 #SBATCH --gpus-per-node=mi250:8
 #SBATCH --time=01:00:00
 #SBATCH --hint=nomultithread
@@ -77,7 +77,7 @@ export DLTS_HOSTFILE=./hostfiles/hosts_$SLURM_JOBID
 export RCCL_DISABLE_RSMI=1
 echo "Starting Torchrun job with 1 nodes, 8 rank per node, 1 GPUs per rank..."
 
-srun --ntasks=$SLURM_NNODES --ntasks-per-node=8 singularity exec "$CONTAINER_PATH" \
+srun --ntasks-per-node=1 singularity exec "$CONTAINER_PATH" \
     torchrun --nnodes=$NNODES --nproc_per_node=$GPUS_PER_NODE \
            --rdzv_backend=c10d \
            --rdzv_endpoint=${MASTER_ADDR}:${MASTER_PORT} \
