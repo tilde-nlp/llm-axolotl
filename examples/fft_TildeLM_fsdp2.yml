@@ -96,7 +96,7 @@ special_tokens:
 use_deepspeed: false
 use_fsdp: true
 fsdp:
-  - full_shard
+  - hybrid_shard
   - auto_wrap
 fsdp_config:
   fsdp_limit_all_gathers: true
@@ -107,7 +107,7 @@ fsdp_config:
   fsdp_auto_wrap_policy: TRANSFORMER_BASED_WRAP
   fsdp_transformer_layer_cls_to_wrap: LlamaDecoderLayer
   fsdp_state_dict_type: FULL_STATE_DICT
-  fsdp_sharding_strategy: FULL_SHARD
+  fsdp_sharding_strategy: HYBRID_SHARD
 
 
 # We embed the DeepSpeed config inline
